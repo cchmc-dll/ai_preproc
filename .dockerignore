@@ -1,0 +1,8 @@
+# Ignore data directory
+preprocessed/
+**data*/
+
+# Ignore output directory
+output/
+jupyter_out/
+
