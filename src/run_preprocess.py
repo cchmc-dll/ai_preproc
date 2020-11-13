@@ -101,7 +101,8 @@ def build_config_dict(config):
     # calculated values from cmdline_args
     config["n_channels"] = len(config["training_modalities"])
 
-    config["image_shape"] = map(int, (config['image_shape'].split(',')))
+    mapper = lambda x: None if x == 'None' else int(x)
+    config["image_shape"] = map(mapper,config['image_shape'].split(','))
     config["image_shape"] = tuple(list(config["image_shape"]))
     config["image_masks"] = config['image_masks'].split(',')
     config["output_file"] = os.path.join(
