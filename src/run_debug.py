@@ -102,8 +102,7 @@ def build_config_dict(config):
     config["image_shape"] = map(mapper,config['image_shape'].split(','))
     config["image_shape"] = tuple(list(config["image_shape"]))
     config["image_masks"] = config['image_masks'].split(',')
-    config["output_file"] = os.path.join(
-        config["output_dir"], config["output_file"])
+    config["output_file"] = os.path.join(config["output_dir"], config["output_file"])
 
     # Save absolute path for input folders
     if (config["input_type"] == "Image" or config["input_type"] == "Both"):
@@ -132,13 +131,29 @@ def main(*arg):
     pprint.pprint(config)
     #run_preprocess(config)
 
-# niftis = nifti_loader(
-#             config["hdf5_file"],
-#             config["input_images"],
-#             config["problem_type"],
-#             config["image_shape"],
-#             config["training_modalities"],
-#             config["image_masks"]
-#         )
+    return config
+    # # Open the hdf5 file
+    # if config['overwrite'] or not os.path.exists(config["output_file"]):
+    #     hdf5_file = tables.open_file(config["output_file"], mode='w')
+    #     overwrite = 1
+    # else:
+    #     hdf5_file = tables.open_file(config["output_file"], mode='r')
+
+    # config["hdf5_file"] = hdf5_file
+
+    # niftis = nifti_loader(
+    #         config["hdf5_file"],
+    #         config["input_images"],
+    #         config["problem_type"],
+    #         config["image_shape"],
+    #         config["training_modalities"],
+    #         config["image_masks"]
+    #     )
+
+    # print(' Image data shape: ', niftis.image_data_shape)
+    # print(' Image modalities: ', niftis.image_modalities)
+    # print('  No. of Subjects: ', len(niftis.ids))
+    # niftis.load_toHDF5()
+
 if __name__ == "__main__":
     main()

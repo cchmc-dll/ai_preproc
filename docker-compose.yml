@@ -2,11 +2,12 @@ version: "3"
 
 services:
   preproc:
-    image: chezhipower/preproc:latest
-    container_name: 'preproc'
+    #image: chezhipower/preproc:latest
+    image: preproc:dev
+    container_name: 'preproc-debug'
     ports:
       - "8888:8888"
     volumes:
-      - C:\Users\somd7w\Desktop\AmbraTest\UCSD_NIFTI:/home/jovyan/data_ucsd
-      - C:\Users\somd7w\Desktop\AmbraTest\DUKE_NIFTI:/home/jovyan/data_duke
+      - C:\Users\somd7w\Desktop\AmbraTest\NIFTI_TEST:/home/jovyan/data
+      - C:\Users\somd7w\Desktop\DL_Projects\preproc_cntr\Preprocess:/home/jovyan
       - C:\Users\somd7w\Desktop\AmbraTest\HDF5:/home/jovyan/output

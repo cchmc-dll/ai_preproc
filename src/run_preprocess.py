@@ -105,8 +105,7 @@ def build_config_dict(config):
     config["image_shape"] = map(mapper,config['image_shape'].split(','))
     config["image_shape"] = tuple(list(config["image_shape"]))
     config["image_masks"] = config['image_masks'].split(',')
-    config["output_file"] = os.path.join(
-        config["output_dir"], config["output_file"])
+    config["output_file"] = os.path.join(config["output_dir"], config["output_file"])
 
     # Save absolute path for input folders
     if (config["input_type"] == "Image" or config["input_type"] == "Both"):

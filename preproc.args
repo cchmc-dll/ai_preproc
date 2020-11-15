@@ -1,9 +1,9 @@
 --problem_type=Segmentation
 --input_type=Image
 --image_format=NIFTI
---input_images=C:\Users\somd7w\Desktop\AmbraTest\UCSD_NIFTI
+--input_images=data/
 --output_file=data_test.h5
---output_dir=C:\Users\somd7w\Desktop\AmbraTest\HDF5
+--output_dir=output/
 --overwrite=0
 --output_images=0
 --output_imstats=1
