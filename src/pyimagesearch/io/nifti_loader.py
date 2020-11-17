@@ -28,8 +28,7 @@ class nifti_loader:
                 training_data_files.append(tuple(subject_files))
             self.data_files = training_data_files
             self.ids = subject_ids
-            self.image_data_shape = tuple(
-                [0, len(self.image_modalities)] + list(self.input_shape))
+            self.image_data_shape = tuple([0, len(self.image_modalities)] + list(self.input_shape))
             self.truth_data_shape = tuple([0, 1] + list(self.input_shape))
             self.n_channels = len(self.image_modalities)
         elif self.problem_type == 'Classification':
@@ -67,6 +66,15 @@ class nifti_loader:
 
     def set_sample_ids(self, new_ids):
         self.ids = new_ids
+
+    def get_vl_shape(self, inshape, Noneindex,mask=False):
+        unk_dim_len = inshape[Noneindex]
+        if mask:
+            imshape = tuple([i for i in self.truth_data_shape if i])
+        else:
+            imshape =  tuple([i for i in self.image_data_shape if i])
+        new_shape = tuple([unk_dim_len] + list(imshape))
+        return new_shape
 
     def load_toHDF5(self, verbose=-1):
                     # initialize the list of features and labels
@@ -131,6 +139,92 @@ class nifti_loader:
             if verbose > 0 and i > 0 and (i + 1) % verbose == 0:
                 print("[INFO] processed {}/{}".format(i + 1, len(self.ids)))
         return(image_storage)
+
+    def load_toHDF5_debug(self, verbose=-1):
+                    # initialize the list of features and labels
+        n_samples = len(self.ids)
+        filters = tables.Filters(complevel=5, complib='blosc')
+        nslices = 1
+        imarray_shape = self.image_data_shape
+        imtruth_shape = self.truth_data_shape
+        Noneindex = None
+        if None in self.image_data_shape:
+            Noneindex = self.input_shape.index(None)
+            imarray_shape = tuple([i for i in self.image_data_shape if i])
+            image_storage = self.hdf5.create_vlarray(self.hdf5.root, 'imdata',tables.Float32Atom(shape=imarray_shape),
+            filters = filters, expectedrows = n_samples)
+        else:
+            image_storage = self.hdf5.create_earray(self.hdf5.root, 'imdata', tables.Float32Atom(
+            ), shape=imarray_shape, filters=filters, expectedrows=n_samples*nslices)
+
+        affine_storage = self.hdf5.create_earray(self.hdf5.root, 'affine', tables.Float32Atom()
+        , shape=(0, 4, 4), filters=filters, expectedrows=n_samples)
+        # Stores image stats: ["input image width","input image height","input image depth","input pixel width","input pixel height","input slice thickness",
+        #                      "output image width","output image height","output image depth","output pixel width","output pixel height","output slice thickness"]
+        imstats_storage = self.hdf5.create_earray(self.hdf5.root, 'imstats', tables.Float32Atom(), shape=(0, 12), filters=filters, expectedrows=n_samples)
+        if self.problem_type == "Classification":
+            truth_storage = self.hdf5.create_earray(self.hdf5.root, 'truth', tables.StringAtom(
+                itemsize=15), shape=imtruth_shape, filters=filters, expectedrows=n_samples)
+        elif self.problem_type == "Segmentation":
+            if None in imtruth_shape:
+                imtruth_shape = tuple([i for i in self.truth_data_shape if i])
+                truth_storage = self.hdf5.create_vlarray(self.hdf5.root, 'truth', tables.UInt8Atom(shape=imtruth_shape),filters=filters, expectedrows=n_samples)
+            else:
+                truth_storage = self.hdf5.create_earray(self.hdf5.root, 'truth', tables.UInt8Atom(
+                ), shape=imtruth_shape, filters=filters, expectedrows=n_samples*nslices)
+            # Separate vector of volume of the Segmentation mask
+            volume_storage = self.hdf5.create_earray(self.hdf5.root, 'volume', tables.Float32Atom(
+            ), shape=(0, 1), filters=filters, expectedrows=n_samples)
+
+        for (i, imagePath) in enumerate(self.data_files):
+                        # load the image and extract the class label assuming
+                        # that our path has the following format:
+                        # /path/to/dataset/{class}/{image}.jpg
+            if self.problem_type == "Classification":
+                subject_name = imagePath[0].split(os.path.sep)[-2]
+                if subject_name in self.ids:
+                    images, imstats = reslice_image_set(
+                        in_files=imagePath, image_shape=self.input_shape, label_indices=len(imagePath)-1, crop=True, stats=True)
+                    label = imagePath[0].split(os.path.sep)[-3]
+                    subject_data = [image.get_data() for image in images]
+                    affine = images[0].affine
+
+                    image_storage.append(np.asarray(subject_data)[np.newaxis])
+                    imstats_storage.append(np.asarray(imstats)[np.newaxis])
+                    affine_storage.append(np.asarray(affine)[np.newaxis])
+                    truth_storage.append(np.asarray(label)[np.newaxis])
+
+            elif self.problem_type == "Segmentation":
+                images, imstats = reslice_image_set(
+                    in_files=imagePath, image_shape=self.input_shape, label_indices=len(imagePath)-1, crop=True, stats=True)
+                subject_data = [image.get_data() for image in images]
+                image = np.asarray(subject_data[:self.n_channels])
+                truth = np.asarray(subject_data[self.n_channels], dtype=np.uint8)
+                affine = images[0].affine
+                volume = get_volume(imstats[6:], mask=np.asarray(
+                    subject_data[self.n_channels]), label=1, units="cm")
+                if Noneindex:
+                    image_vlshape = get_vl_shape(image.shape,Noneindex)
+                    truth_vlshape = get_vl_shape(truth.shape,Noneindex,mask=True)
+                    image_storage.append(image.reshape(image_vlshape))
+                    truth_vlshape.append(truth.reshape(truth_vlshape))
+                else:
+                    image_storage.append(image[np.newaxis])
+                    truth_storage.append(truth[np.newaxis][np.newaxis])
+
+                imstats_storage.append(np.asarray(imstats)[np.newaxis])
+                affine_storage.append(np.asarray(affine)[np.newaxis])
+                volume_storage.append(np.asarray(volume)[np.newaxis][np.newaxis])
+
+            # elif self.problem_type is "Regression":
+            #    image = cv2.imread(imagePath)
+
+                # show an update every `verbose` images
+            if verbose > 0 and i > 0 and (i + 1) % verbose == 0:
+                print("[INFO] processed {}/{}".format(i + 1, len(self.ids)))
+        return(image_storage)
+
+
 
     def hdf5_toImages(self, output_dir):
         for index in range(0,len(self.hdf5.root.imdata)):

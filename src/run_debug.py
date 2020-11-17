@@ -126,9 +126,9 @@ def main(*arg):
     if arg:
         sys.argv.append(arg[0])
     args = parse_command_line_arguments()
-    pprint.pprint(args)
+    #pprint.pprint(args)
     config = build_config_dict(vars(args))
-    pprint.pprint(config)
+    #pprint.pprint(config)
     #run_preprocess(config)
 
     return config

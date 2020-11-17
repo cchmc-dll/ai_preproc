@@ -87,13 +87,17 @@ def read_resize_image(in_file, image_shape=None, interpolation='linear', crop=No
     Resizes nifti based on nibabel functions instead of SITK library used by read_image()
     :returns - resized image with proper affine matrices
     """
-    print("Reading: {0}".format(in_file))
+    print("Reading rri: {0}".format(in_file))
     image = nib.load(os.path.abspath(in_file))
     image = fix_shape(image)
     if crop:
         image = crop_img_to(image, crop, copy=True)
     if image_shape:
         new_shape = image_shape
+        # Check for None, which allows for arbitrary sized images
+        if None in new_shape:
+            input_shape = image.shape
+            new_shape = tuple([b if b else a for b,a in zip(new_shape,input_shape)])
         # Reorder (get rids of rotations in the affine)
         image = reorder_img(image,resample=interpolation)
         # Calculate voxel spacing for desired image shape

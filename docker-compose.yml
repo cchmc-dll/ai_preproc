@@ -4,7 +4,7 @@ services:
   preproc:
     #image: chezhipower/preproc:latest
     image: preproc:dev
-    container_name: 'preproc-debug'
+    container_name: 'preproc'
     ports:
       - "8888:8888"
     volumes:
