@@ -10,4 +10,4 @@ services:
     volumes:
       - C:\Users\somd7w\Desktop\AmbraTest\NIFTI_TEST:/home/jovyan/data
       - C:\Users\somd7w\Desktop\DL_Projects\preproc_cntr\Preprocess:/home/jovyan
-      - C:\Users\somd7w\Desktop\AmbraTest\HDF5:/home/jovyan/output
+      - C:\Users\somd7w\Desktop\AmbraTest\HDF5_TEST:/home/jovyan/output
