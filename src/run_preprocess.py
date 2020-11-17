@@ -251,7 +251,7 @@ def run_preprocess(config):
 
         if(config['output_imstats']):
             out_d = config['output_file'].split('/')[0]
-            out_f = os.path.splitext(os.path.basename(config['output_file']))[0]
+            out_f = os.path.splitext(os.path.basename(config['output_file']))[0]+'_imstats.csv'
             image_loader.hdf5_toImStats(output_dir=out_d,output_file=out_f)
 
     # Step 6: Load Clinical data
