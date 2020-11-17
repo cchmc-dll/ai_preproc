@@ -6,3 +6,7 @@ preprocessed/
 output/
 jupyter_out/
 
+# Ignore .h5 files
+**/*.h5
+
+
