@@ -250,7 +250,9 @@ def run_preprocess(config):
             image_loader.hdf5_toImages(output_dir=config['output_file'].split('/')[0])
 
         if(config['output_imstats']):
-            image_loader.hdf5_toImStats(output_dir=config['output_file'].split('/')[0])
+            out_d = config['output_file'].split('/')[0]
+            out_f = os.path.splitext(os.path.basename(config['output_file']))[0]
+            image_loader.hdf5_toImStats(output_dir=out_d,output_file=out_f)
 
     # Step 6: Load Clinical data
     elif (config["input_type"] == "Clinical"):

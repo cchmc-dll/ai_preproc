@@ -225,7 +225,6 @@ class nifti_loader:
         return(image_storage)
 
 
-
     def hdf5_toImages(self, output_dir):
         for index in range(0,len(self.hdf5.root.imdata)):
             if 'subject_ids' in self.hdf5.root:
