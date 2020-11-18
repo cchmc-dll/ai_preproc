@@ -128,7 +128,7 @@ def normalize_data_storage(data_storage,Noneindex=None,imdatashape=None):
     mean = np.asarray(means).mean(axis=0)
     std = np.asarray(stds).mean(axis=0)
     for index in range(data_storage.shape[0]):
-         if Noneindex:
+        if Noneindex:
             imshape = list(imdatashape)
             imshape[Noneindex] = data_storage[index].shape[0]
             imshape = imshape[1:]
