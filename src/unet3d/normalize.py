@@ -111,17 +111,34 @@ def normalize_data(data, mean, std):
     return data
 
 
-def normalize_data_storage(data_storage):
+def normalize_data_storage(data_storage,Noneindex=None,imdatashape=None):
     means = list()
     stds = list()
     for index in range(data_storage.shape[0]):
-        data = data_storage[index]
+        if Noneindex:
+            imshape = list(imdatashape)
+            imshape[Noneindex] = data_storage[index].shape[0]
+            imshape = imshape[1:]
+            imshape = tuple(imshape)
+            data = data_storage[index].reshape(imshape)
+        else:
+            data = data_storage[index]
         means.append(data.mean(axis=(1, 2, 3)))
         stds.append(data.std(axis=(1, 2, 3)))
     mean = np.asarray(means).mean(axis=0)
     std = np.asarray(stds).mean(axis=0)
     for index in range(data_storage.shape[0]):
-        data_storage[index] = normalize_data(data_storage[index], mean, std)
+         if Noneindex:
+            imshape = list(imdatashape)
+            imshape[Noneindex] = data_storage[index].shape[0]
+            imshape = imshape[1:]
+            imshape = tuple(imshape)
+            data = data_storage[index].reshape(imshape)
+            storeshape = data_storage[index].shape
+            data_storage[index] = normalize_data(data, mean, std).reshape(storeshape)
+        else:
+            data = data_storage[index]
+            data_storage[index] = normalize_data(data, mean, std)
     return data_storage
 
 

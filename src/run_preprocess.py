@@ -223,7 +223,8 @@ def run_preprocess(config):
 
         # Step 7: Normalize Data Storage
         if config["normalize"]:
-            normalize_data_storage(image_storage)
+            normalize_data_storage(image_storage,Noneindex=image_loader.Noneindex,
+            imdatashape = image_loader.image_data_shape)
             normalize_clinical_storage(clinical_storage)
             print("Data in HDF5 File is normalized for training")
 
@@ -241,7 +242,8 @@ def run_preprocess(config):
             # Step 7: Normalize Data Storage
             if config["normalize"]:
                 if len(config["image_shape"]) > 2:
-                    normalize_data_storage(image_storage)
+                    normalize_data_storage(image_storage,Noneindex=image_loader.Noneindex,
+                    imdatashape = image_loader.image_data_shape)
                     print("Data in HDF5 File is normalized for training")
                 else:
                     normalize_data_storage_2D(image_storage)
