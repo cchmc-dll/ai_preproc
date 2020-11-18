@@ -16,6 +16,7 @@ class nifti_loader:
         self.image_modalities = image_modalities
         self.mask = mask
         self.hdf5 = hdf5
+        self.Noneindex = None
         if self.problem_type == 'Segmentation':
             training_data_files = list()
             subject_ids = list()
@@ -60,6 +61,8 @@ class nifti_loader:
         #        training_data_files.append(tuple(subject_files))
         #    self.data_files = training_data_files
         #    self.ids = subject_ids
+        if None in self.image_data_shape:
+            self.Noneindex = self.image_data_shape.index(None)
 
     def get_sample_ids(self):
         return self.ids
@@ -67,11 +70,12 @@ class nifti_loader:
     def set_sample_ids(self, new_ids):
         self.ids = new_ids
 
-    def get_vl_shape(self, inshape, Noneindex,mask=False):
-        unk_dim_len = inshape[Noneindex]
+    def get_vl_shape(self, inshape,Noneindex,mask=False):
         if mask:
+            unk_dim_len = inshape[Noneindex-2]
             imshape = tuple([i for i in self.truth_data_shape if i])
         else:
+            unk_dim_len = inshape[Noneindex-1]
             imshape =  tuple([i for i in self.image_data_shape if i])
         new_shape = tuple([unk_dim_len] + list(imshape))
         return new_shape
@@ -147,9 +151,7 @@ class nifti_loader:
         nslices = 1
         imarray_shape = self.image_data_shape
         imtruth_shape = self.truth_data_shape
-        Noneindex = None
-        if None in self.image_data_shape:
-            Noneindex = self.input_shape.index(None)
+        if self.Noneindex:
             imarray_shape = tuple([i for i in self.image_data_shape if i])
             image_storage = self.hdf5.create_vlarray(self.hdf5.root, 'imdata',tables.Float32Atom(shape=imarray_shape),
             filters = filters, expectedrows = n_samples)
@@ -166,7 +168,7 @@ class nifti_loader:
             truth_storage = self.hdf5.create_earray(self.hdf5.root, 'truth', tables.StringAtom(
                 itemsize=15), shape=imtruth_shape, filters=filters, expectedrows=n_samples)
         elif self.problem_type == "Segmentation":
-            if None in imtruth_shape:
+            if self.Noneindex:
                 imtruth_shape = tuple([i for i in self.truth_data_shape if i])
                 truth_storage = self.hdf5.create_vlarray(self.hdf5.root, 'truth', tables.UInt8Atom(shape=imtruth_shape),filters=filters, expectedrows=n_samples)
             else:
@@ -203,11 +205,11 @@ class nifti_loader:
                 affine = images[0].affine
                 volume = get_volume(imstats[6:], mask=np.asarray(
                     subject_data[self.n_channels]), label=1, units="cm")
-                if Noneindex:
-                    image_vlshape = get_vl_shape(image.shape,Noneindex)
-                    truth_vlshape = get_vl_shape(truth.shape,Noneindex,mask=True)
+                if self.Noneindex:
+                    image_vlshape = self.get_vl_shape(image.shape,self.Noneindex)
+                    truth_vlshape = self.get_vl_shape(truth.shape,self.Noneindex,mask=True)
                     image_storage.append(image.reshape(image_vlshape))
-                    truth_vlshape.append(truth.reshape(truth_vlshape))
+                    truth_storage.append(truth.reshape(truth_vlshape))
                 else:
                     image_storage.append(image[np.newaxis])
                     truth_storage.append(truth[np.newaxis][np.newaxis])
@@ -224,7 +226,6 @@ class nifti_loader:
                 print("[INFO] processed {}/{}".format(i + 1, len(self.ids)))
         return(image_storage)
 
-
     def hdf5_toImages(self, output_dir):
         for index in range(0,len(self.hdf5.root.imdata)):
             if 'subject_ids' in self.hdf5.root:
@@ -238,7 +239,26 @@ class nifti_loader:
                 os.makedirs(case_directory)
 
             affine = self.hdf5.root.affine[index]
-            test_data = np.asarray([self.hdf5.root.imdata[index]])
+            if self.Noneindex:
+                imshape = list(self.image_data_shape)
+                imshape[self.Noneindex] = self.hdf5.root.imdata[index].shape[0]
+                imshape = imshape[1:]
+                trshape = imshape.copy()
+                trshape[0]=1
+                trshape = tuple(trshape)
+                imshape = tuple(imshape)
+                test_data = np.asarray([self.hdf5.root.imdata[index].reshape(imshape)])
+                test_truth = nib.Nifti1Image(self.hdf5.root.truth[index].reshape(trshape)[0], affine)
+            else:
+                test_data = np.asarray([self.hdf5.root.imdata[index]])
+                test_truth = nib.Nifti1Image(self.hdf5.root.truth[index][0], affine)
+                # Set the xyzt units header to 2 (mm)
+
+            # Write Masks first
+            test_truth.header['xyzt_units'] = 2
+            test_truth.to_filename(os.path.join(
+                case_directory, "truth.nii.gz"))
+
             for i, modality in enumerate(self.image_modalities):
                 image = nib.Nifti1Image(test_data[0, i], affine)
                 # Set the xyzt units header to 2 (mm)
@@ -246,12 +266,7 @@ class nifti_loader:
                 image.to_filename(os.path.join(
                     case_directory, "data_{0}.nii.gz".format(modality)))
 
-            test_truth = nib.Nifti1Image(
-                self.hdf5.root.truth[index][0], affine)
-            # Set the xyzt units header to 2 (mm)
-            test_truth.header['xyzt_units'] = 2
-            test_truth.to_filename(os.path.join(
-                case_directory, "truth.nii.gz"))
+
 
     def hdf5_toImStats(self, output_dir, output_file="imstats.csv"):
         if self.hdf5:
