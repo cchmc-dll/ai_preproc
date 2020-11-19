@@ -1,18 +1,20 @@
 import os
-import glob
-import cmd
+# import glob
+# import cmd
 import sys
-from argparse import ArgumentParser
-from .pyimagesearch.io.nifti_loader import nifti_loader
-from .pyimagesearch.io.TIF_loader import TIF_loader, MiddleTIFLoader
 import numpy as np
 import pandas as pd
 import tables
 import pprint
+
+from argparse import ArgumentParser
+from .pyimagesearch.io.nifti_loader import nifti_loader
+from .pyimagesearch.io.TIF_loader import TIF_loader, MiddleTIFLoader
+
 from .unet3d.normalize import normalize_data_storage, normalize_clinical_storage, normalize_data_storage_2D
 from .unet3d.generator import get_validation_split
 
-config = dict()
+#config = dict()
 
 
 def parse_command_line_arguments():
@@ -195,8 +197,6 @@ def run_preprocess(config):
         # neglected.
         image_loader = get_image_loader(config)
         subject_ids = image_loader.get_sample_ids()
-        image_storage = None
-        id_storage = None
         df_features = pd.read_csv(
             os.path.join(
                 config["input_clinical"],
@@ -242,7 +242,7 @@ def run_preprocess(config):
             # Step 7: Normalize Data Storage
             if config["normalize"]:
                 if len(config["image_shape"]) > 2:
-                    normalize_data_storage(image_storage,Noneindex=image_loader.Noneindex,
+                    normalize_data_storage(image_storage, Noneindex=image_loader.Noneindex,
                     imdatashape = image_loader.image_data_shape)
                     print("Data in HDF5 File is normalized for training")
                 else:
@@ -267,7 +267,6 @@ def run_preprocess(config):
         features = list(df_features)
         feature_array = []
         subject_ids = []
-        truth_storage = None
         subject_ids = df_features.index
         feature_array = df_features[features]
 
