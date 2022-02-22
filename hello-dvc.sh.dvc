@@ -1,0 +1,5 @@
+outs:
+- md5: 43999727e551921111ab49ebb75edf3c
+  size: 29
+  isexec: true
+  path: hello-dvc.sh
