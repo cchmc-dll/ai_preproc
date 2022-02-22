@@ -1,0 +1,7 @@
+[core]
+    remote = minio
+['remote "minio"']
+    url = s3://dummy
+    endpointurl = http://minio-0:9000
+    access_key_id = testkey
+    secret_access_key = testsecretkey
